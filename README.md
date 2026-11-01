@@ -6,9 +6,13 @@
 
 Sudoku Solver is a full-stack web application designed to help users work through difficult Sudoku puzzles without simply revealing the answer.
 
-Users can upload a screenshot of a Sudoku puzzle, review the automatically recognized grid, and receive personalized feedback on their progress. The application identifies incorrect entries, explains logical deductions, and highlights the next step using established Sudoku-solving techniques.
+Users can upload a screenshot of a Sudoku puzzle, review the automatically recognized grid, and receive feedback on their progress. The application identifies incorrect entries, explains logical deductions, and highlights the next step using established Sudoku-solving techniques.
 
-Originally developed for my IB Computer Science Internal Assessment, the project was built around a specific problem: traditional Sudoku tools often force users to choose between solving a puzzle entirely independently or revealing its complete solution. Sudoku Solver offers a middle ground by helping users understand *why* a move is correct.
+Originally developed for my IB Computer Science Internal Assessment, the project addresses a simple problem: most Sudoku tools either leave users to solve puzzles independently or reveal the complete solution. Sudoku Solver offers a middle ground by helping users understand *why* a move is correct.
+
+**[Read the Full Technical Paper](https://docs.google.com/document/d/1I54q5_AfscQ2GyiiSZhsyssr1hS_bsiDRH8tEb4uA5Y)**
+
+---
 
 ## Key Features
 
@@ -17,7 +21,7 @@ Originally developed for my IB Computer Science Internal Assessment, the project
 The application uses a hybrid optical character recognition pipeline to convert uploaded Sudoku images into interactive digital boards.
 
 - **Grid detection:** OpenCV identifies the Sudoku grid, corrects perspective distortion, and separates it into 81 individual cells.
-- **Digit classification:** A hybrid recognition system uses Tesseract OCR for printed digits and a trained multilayer perceptron (MLP) for handwritten entries.
+- **Digit recognition:** Tesseract OCR recognizes printed digits, while a trained multilayer perceptron (MLP) classifies handwritten entries.
 - **Given vs. user detection:** HSV color analysis distinguishes original puzzle clues from user-entered numbers.
 - **Manual verification:** An editable review interface allows users to correct OCR errors before analysis.
 
@@ -34,7 +38,7 @@ Rather than relying exclusively on brute-force search, the application implement
 - Pointing Pairs
 - Box-Line Reduction
 
-The solver applies these techniques iteratively, restarting from simpler deductions whenever progress is made. This allows it to follow a logical solving process similar to how a human approaches Sudoku.
+The solver applies these techniques iteratively, restarting from simpler deductions whenever progress is made. This allows it to follow a logical solving process similar to how a person approaches Sudoku.
 
 ### 3. Intelligent Hint Engine
 
@@ -44,7 +48,7 @@ Each hint includes the relevant solving technique, target cell, and an explanati
 
 The interface uses color-coded highlighting to draw attention to relevant rows, columns, boxes, and candidate eliminations.
 
-Unlike a conventional solver, the hint system is designed to guide users toward the next step without automatically completing the puzzle.
+Unlike a conventional solver, the hint system guides users toward the next step without automatically completing the puzzle.
 
 ### 4. Mistake Detection & Explanation
 
@@ -57,7 +61,7 @@ It can identify:
 - Accidental modifications to original puzzle clues.
 - Invalid or unsolvable puzzle configurations.
 
-Where possible, the application provides logical explanations for detected mistakes rather than simply identifying incorrect cells.
+Where possible, the application provides logical explanations for detected mistakes rather than simply marking cells as incorrect.
 
 ### 5. Optimized Exact Solver
 
@@ -75,6 +79,8 @@ Bitwise operations allow the engine to efficiently check, eliminate, and update 
 
 This representation supports both the logical solver and hint-generation system.
 
+---
+
 ## Technical Architecture
 
 The application is organized into three layers:
@@ -83,12 +89,14 @@ The application is organized into three layers:
 
 The frontend handles user interaction, board visualization, image uploads, and hint displays.
 
-The Flask API manages communication between the browser and the Python backend through two main endpoints:
+The Flask API manages communication between the browser and Python backend through two main endpoints:
 
 - `POST /ocr` — Processes an uploaded image and returns the recognized Sudoku grid.
 - `POST /analyze` — Validates the board, detects mistakes, generates hints, and computes solutions.
 
 The backend separates image processing from puzzle-solving logic, making the individual components easier to test and maintain.
+
+---
 
 ## Technologies Used
 
@@ -104,6 +112,8 @@ The backend separates image processing from puzzle-solving logic, making the ind
 | HOG features | Handwritten digit feature extraction |
 | Pillow | Image handling |
 | joblib | Trained model serialization |
+
+---
 
 ## Project Structure
 
@@ -134,6 +144,8 @@ sudokusolver/
     └── styles.css
 ```
 
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -141,13 +153,13 @@ sudokusolver/
 - Python 3.10+
 - Tesseract OCR
 
-On macOS, install Tesseract using Homebrew:
+Install Tesseract on macOS:
 
 ```bash
 brew install tesseract
 ```
 
-On Ubuntu/Debian:
+Or on Ubuntu/Debian:
 
 ```bash
 sudo apt install tesseract-ocr
@@ -184,28 +196,4 @@ The backend runs at `http://127.0.0.1:8000` by default.
 
 If additional training samples are added, retrain the model using:
 
-```bash
-python3 -m ocr.train_classifier
 ```
-
-## Testing & Evaluation
-
-The application was developed and evaluated against 12 functional success criteria covering OCR accuracy, puzzle validation, hint generation, mistake detection, and frontend functionality.
-
-Testing included valid and invalid puzzles, ambiguous solutions, OCR recognition errors, and end-to-end use with the intended client.
-
-All 12 functional criteria passed their documented tests.
-
-User feedback was positive, particularly regarding the application's ability to explain logical moves and identify mistakes. Handwritten digit recognition remained the main area for improvement, which the editable OCR review interface helps address.
-
-## Future Improvements
-
-- **Adjustable hint difficulty:** Allow users to select beginner, intermediate, or advanced solving techniques.
-- **Hint history:** Store previous hints so users can review earlier deductions.
-- **Improved handwriting recognition:** Expand the training dataset to better accommodate different handwriting styles.
-
-## Background
-
-This project was developed as part of my International Baccalaureate Computer Science Internal Assessment (May 2026).
-
-It combines image processing, supervised machine learning, constraint propagation, recursive search, and explainable algorithms in a single application designed around a real user's needs.
