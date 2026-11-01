@@ -1,197 +1,211 @@
-<a id="readme-top"></a>
+# Sudoku Solver
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Issues][issues-shield]][issues-url]
+**An intelligent Sudoku assistant combining computer vision, machine learning, and logical reasoning to help users solve puzzles step by step.**
 
-<br />
-<div align="center">
-<h3 align="center">Sudoku Solver</h3>
-  <p align="center">
-    A web-based sudoku solver with step-by-step hints and OCR puzzle import.
-  </p>
-</div>
+## Overview
 
----
+Sudoku Solver is a full-stack web application designed to help users work through difficult Sudoku puzzles without simply revealing the answer.
 
-## Directory Structure
+Users can upload a screenshot of a Sudoku puzzle, review the automatically recognized grid, and receive personalized feedback on their progress. The application identifies incorrect entries, explains logical deductions, and highlights the next step using established Sudoku-solving techniques.
 
-```
+Originally developed for my IB Computer Science Internal Assessment, the project was built around a specific problem: traditional Sudoku tools often force users to choose between solving a puzzle entirely independently or revealing its complete solution. Sudoku Solver offers a middle ground by helping users understand *why* a move is correct.
+
+## Key Features
+
+### 1. Computer Vision & OCR
+
+The application uses a hybrid optical character recognition pipeline to convert uploaded Sudoku images into interactive digital boards.
+
+- **Grid detection:** OpenCV identifies the Sudoku grid, corrects perspective distortion, and separates it into 81 individual cells.
+- **Digit classification:** A hybrid recognition system uses Tesseract OCR for printed digits and a trained multilayer perceptron (MLP) for handwritten entries.
+- **Given vs. user detection:** HSV color analysis distinguishes original puzzle clues from user-entered numbers.
+- **Manual verification:** An editable review interface allows users to correct OCR errors before analysis.
+
+The handwritten digit classifier uses Histogram of Oriented Gradients (HOG) features and test-time augmentation to improve recognition.
+
+### 2. Human-Style Logical Solver
+
+Rather than relying exclusively on brute-force search, the application implements six established Sudoku-solving techniques:
+
+- Naked Singles
+- Hidden Singles
+- Naked Pairs
+- Hidden Pairs
+- Pointing Pairs
+- Box-Line Reduction
+
+The solver applies these techniques iteratively, restarting from simpler deductions whenever progress is made. This allows it to follow a logical solving process similar to how a human approaches Sudoku.
+
+### 3. Intelligent Hint Engine
+
+The hint engine examines the current board and identifies the simplest available logical deduction.
+
+Each hint includes the relevant solving technique, target cell, and an explanation of the reasoning involved.
+
+The interface uses color-coded highlighting to draw attention to relevant rows, columns, boxes, and candidate eliminations.
+
+Unlike a conventional solver, the hint system is designed to guide users toward the next step without automatically completing the puzzle.
+
+### 4. Mistake Detection & Explanation
+
+The application checks user-entered digits against Sudoku constraints and the solution computed from the original clues.
+
+It can identify:
+
+- Duplicate digits within rows, columns, or boxes.
+- Incorrect entries that do not immediately violate a Sudoku rule.
+- Accidental modifications to original puzzle clues.
+- Invalid or unsolvable puzzle configurations.
+
+Where possible, the application provides logical explanations for detected mistakes rather than simply identifying incorrect cells.
+
+### 5. Optimized Exact Solver
+
+For puzzles that cannot be completed using the implemented human-style techniques, the application uses recursive backtracking.
+
+The algorithm incorporates the **Minimum Remaining Values (MRV)** heuristic, prioritizing cells with the fewest legal candidates to reduce unnecessary search.
+
+It also detects puzzles with no valid solution or multiple possible solutions.
+
+### 6. Bitmask-Based Candidate Tracking
+
+The Sudoku engine represents candidate digits using 9-bit integers rather than conventional lists.
+
+Bitwise operations allow the engine to efficiently check, eliminate, and update possible values as constraints propagate through the board.
+
+This representation supports both the logical solver and hint-generation system.
+
+## Technical Architecture
+
+The application is organized into three layers:
+
+**Frontend → Flask REST API → Sudoku Engine / OCR Pipeline**
+
+The frontend handles user interaction, board visualization, image uploads, and hint displays.
+
+The Flask API manages communication between the browser and the Python backend through two main endpoints:
+
+- `POST /ocr` — Processes an uploaded image and returns the recognized Sudoku grid.
+- `POST /analyze` — Validates the board, detects mistakes, generates hints, and computes solutions.
+
+The backend separates image processing from puzzle-solving logic, making the individual components easier to test and maintain.
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Python | Backend and algorithm implementation |
+| Flask | REST API |
+| HTML, CSS, JavaScript | Interactive browser interface |
+| OpenCV | Image processing and grid detection |
+| Tesseract OCR | Printed digit recognition |
+| scikit-learn | Handwritten digit classification using MLP |
+| NumPy | Image and numerical array processing |
+| HOG features | Handwritten digit feature extraction |
+| Pillow | Image handling |
+| joblib | Trained model serialization |
+
+## Project Structure
+
+```text
 sudokusolver/
-├── flask_api.py              # REST API entry point (run this to start the server)
-├── requirements.txt          # Python dependencies
+├── flask_api.py
+├── requirements.txt
 │
-├── sudoku_engine/            # Core puzzle logic (no Flask, no UI)
-│   ├── board.py              # Board representation and candidate tracking
-│   ├── solver.py             # Backtracking solver
-│   ├── hints.py              # Hint engine (Naked Single, Hidden Single)
-│   ├── reports.py            # Formats hint responses for the API
-│   └── models.py             # Shared data models / types
+├── sudoku_engine/
+│   ├── board.py
+│   ├── solver.py
+│   ├── hints.py
+│   ├── reports.py
+│   └── models.py
 │
-├── ocr/                      # OCR pipeline for importing puzzle photos
-│   ├── preprocess.py         # Initial image cleanup (contrast, resize)
-│   ├── grid_detector.py      # Finds and perspective-warps the sudoku grid
-│   ├── cell_extractor.py     # Splits the warped grid into 81 cell images
-│   ├── classifier.py         # Blank detection, given/user classification, digit recognition
-│   ├── train_classifier.py   # Trains the handwritten digit MLP (run once)
-│   ├── digit_model.pkl       # Trained MLP model (HOG + scikit-learn Pipeline)
-│   └── training_data/        # Handwritten digit samples (1–9 subfolders)
+├── ocr/
+│   ├── preprocess.py
+│   ├── grid_detector.py
+│   ├── cell_extractor.py
+│   ├── classifier.py
+│   ├── train_classifier.py
+│   ├── digit_model.pkl
+│   └── training_data/
 │
-└── sudoku_web/               # Front-end (open index.html in a browser)
-    ├── index.html            # App shell and modals
-    ├── app.js                # All UI logic and API calls
-    └── styles.css            # Styling
+└── sudoku_web/
+    ├── index.html
+    ├── app.js
+    └── styles.css
 ```
-
----
-
-## Table of Contents
-- [About The Project](#about-the-project)
-  - [About the Client](#about-the-client-ia-a01-client-scenario)
-  - [Built With](#built-with-ia-a03-justification)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Running the App](#running-the-app)
-- [Prototype Status](#prototype-status)
-- [Roadmap](#roadmap)
-
----
-
-## About The Project
-
-A browser-based sudoku assistant built for a specific client. The user can:
-- Import a puzzle from a photo using OCR (works with both printed and handwritten grids)
-- Review and correct the OCR reading before loading
-- Get step-by-step solving hints explaining the technique used (Naked Single, Hidden Single, etc.)
-- Reveal the full solution at any time
-
-The back-end is a Python/Flask API. The front-end is plain HTML/CSS/JS — no framework.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-### About the Client (IA A01 Client Scenario)
-
-The client is a student who regularly solves sudoku puzzles by hand and wanted a digital tool to help when stuck. Key requirements:
-- Import puzzles directly from a photo (the client writes puzzles by hand into a printed grid)
-- Receive hints that explain *why* a digit belongs in a cell, not just what the digit is
-- Be able to mark their own progress (given vs. user-entered cells shown distinctly)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
-
-### Built With (IA A03 Justification)
-
-| Technology | Version | Role |
-|---|---|---|
-| Python | 3.10.7 | Back-end language |
-| Flask | 3.1.2 | REST API server |
-| flask-cors | — | Cross-origin requests from the browser |
-| OpenCV | 4.13.0 | Image processing, grid detection, OCR preprocessing |
-| scikit-learn | 1.7.2 | MLP classifier for handwritten digit recognition |
-| NumPy | 2.2.6 | Array operations throughout the OCR pipeline |
-| Tesseract / pytesseract | system | Printed digit recognition |
-| Pillow | — | Image format support for pytesseract |
-| joblib | — | Saving/loading the trained digit model |
-| HTML / CSS / JS | — | Front-end (no framework) |
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
----
 
 ## Getting Started
 
 ### Prerequisites
 
 - Python 3.10+
-- Tesseract OCR binary
+- Tesseract OCR
 
-Install Tesseract (macOS):
-```sh
+On macOS, install Tesseract using Homebrew:
+
+```bash
 brew install tesseract
 ```
 
-Install Tesseract (Linux):
-```sh
+On Ubuntu/Debian:
+
+```bash
 sudo apt install tesseract-ocr
 ```
 
 ### Installation
 
-1. Clone the repo
-   ```sh
-   git clone https://github.com/American-School-of-Barcelona/sudokusolver.git
-   cd sudokusolver
-   ```
+**1. Clone the repository**
 
-2. Install Python dependencies
-   ```sh
-   pip install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/American-School-of-Barcelona/sudokusolver.git
+cd sudokusolver
+```
 
-### Running the App
+**2. Install Python dependencies**
 
-1. Start the Flask API (in one terminal):
-   ```sh
-   python3 flask_api.py
-   ```
+```bash
+python3 -m pip install -r requirements.txt
+```
 
-2. Open `sudoku_web/index.html` in a browser (or serve it with any static file server).
+### Running the Application
 
-The API runs on `http://127.0.0.1:8000` by default.
+Start the Flask backend:
 
-> **Retraining the digit model** (only needed if new training data is added):
-> ```sh
-> python3 -m ocr.train_classifier
-> ```
+```bash
+python3 flask_api.py
+```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Open `sudoku_web/index.html` in your browser.
 
----
+The backend runs at `http://127.0.0.1:8000` by default.
 
-## Prototype Status
+### Retraining the Handwritten Digit Classifier
 
-### Completed features
+If additional training samples are added, retrain the model using:
 
-- **OCR import** — photograph a sudoku grid (printed or handwritten), the app detects the grid with perspective correction, classifies each cell as blank/given/user-entry, and reads the digit
-  - Printed digits: Tesseract with CLAHE preprocessing (~95% accuracy)
-  - Handwritten digits: HOG + MLP with 7-way test-time augmentation (98% cross-validation accuracy)
-  - Review modal: user can correct any misread cell before loading
-  - Loading overlay shown during processing
+```bash
+python3 -m ocr.train_classifier
+```
 
-- **Hint engine** — analyses the current board state and explains the next logical step:
-  - Naked Single: only one candidate remains in a cell
-  - Hidden Single: a digit can only go in one cell within a row, column, or box
+## Testing & Evaluation
 
-- **Solve** — reveals the complete solution
+The application was developed and evaluated against 12 functional success criteria covering OCR accuracy, puzzle validation, hint generation, mistake detection, and frontend functionality.
 
-- **Manual entry** — paste or type an 81-digit string to load a puzzle directly
+Testing included valid and invalid puzzles, ambiguous solutions, OCR recognition errors, and end-to-end use with the intended client.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+All 12 functional criteria passed their documented tests.
 
----
+User feedback was positive, particularly regarding the application's ability to explain logical moves and identify mistakes. Handwritten digit recognition remained the main area for improvement, which the editable OCR review interface helps address.
 
-## Roadmap
+## Future Improvements
 
-- [x] Grid detection with perspective warp
-- [x] Cell classification (blank / given / user-entry)
-- [x] Printed digit OCR (Tesseract)
-- [x] Handwritten digit OCR (HOG + MLP)
-- [x] OCR review modal
-- [x] Naked Single hints
-- [x] Hidden Single hints
-- [x] Hidden Single visual highlighting (show excluded cells and blocker houses)
-- [ ] Pointing Pairs / Box-Line Reduction hints
-- [ ] Pencil marks (candidate tracking)
+- **Adjustable hint difficulty:** Allow users to select beginner, intermediate, or advanced solving techniques.
+- **Hint history:** Store previous hints so users can review earlier deductions.
+- **Improved handwriting recognition:** Expand the training dataset to better accommodate different handwriting styles.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Background
 
----
+This project was developed as part of my International Baccalaureate Computer Science Internal Assessment (May 2026).
 
-<!-- MARKDOWN LINKS -->
-[contributors-shield]: https://img.shields.io/github/contributors/American-School-of-Barcelona/sudokusolver.svg?style=for-the-badge
-[contributors-url]: https://github.com/American-School-of-Barcelona/sudokusolver/graphs/contributors
-[issues-shield]: https://img.shields.io/github/issues/American-School-of-Barcelona/sudokusolver.svg?style=for-the-badge
-[issues-url]: https://github.com/American-School-of-Barcelona/sudokusolver/issues
+It combines image processing, supervised machine learning, constraint propagation, recursive search, and explainable algorithms in a single application designed around a real user's needs.
